@@ -58,7 +58,7 @@ cd cli && npm install && npm run build && npm link
 
 ```bash
 # Use Cursor command
-/apply
+/execute
 
 # Track progress
 task-magic task list
@@ -96,7 +96,7 @@ task-magic sync                  # Sync CHANGES.md
 | Command | Description |
 |---------|-------------|
 | `/proposal` | Create a new change proposal |
-| `/apply` | Implement an approved change |
+| `/execute` | Implement an approved change |
 | `/archive` | Archive a completed change |
 | `/quick-fix` | Create minimal change for simple fixes |
 | `/task-detail` | Add implementation details to a task |

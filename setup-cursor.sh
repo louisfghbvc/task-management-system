@@ -106,7 +106,7 @@ fi
 echo ""
 echo "⌨️  Copying Cursor commands..."
 
-for cmd in proposal apply archive quick-fix task-detail; do
+for cmd in proposal execute archive quick-fix task-detail; do
     if [ -f "$SOURCE_DIR/.cursor/commands/$cmd.md" ]; then
         cp "$SOURCE_DIR/.cursor/commands/$cmd.md" "$TARGET_DIR/.cursor/commands/"
         echo -e "  ${GREEN}✓${NC} /$cmd"
@@ -126,7 +126,7 @@ This project uses Task Magic for spec-driven development.
 - Sounds ambiguous and you need guidance before coding
 
 Use `.ai/AGENTS.md` to learn:
-- How to create and apply change proposals
+- How to create and execute change proposals
 - Spec format and conventions
 - Task format and workflow
 - CLI command reference
@@ -145,7 +145,7 @@ task-magic sync                  # Update CHANGES.md
 ## Cursor Commands
 
 - `/proposal` - Create a new change proposal
-- `/apply` - Implement an approved change
+- `/execute` - Implement an approved change
 - `/archive` - Archive a completed change
 - `/quick-fix` - Create a minimal change for simple fixes
 - `/task-detail` - Add implementation details to a task

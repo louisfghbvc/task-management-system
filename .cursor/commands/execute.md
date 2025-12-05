@@ -1,6 +1,6 @@
 ---
-name: /apply
-id: apply
+name: /execute
+id: execute
 category: Task Magic
 description: Implement an approved change and keep tasks in sync.
 ---
