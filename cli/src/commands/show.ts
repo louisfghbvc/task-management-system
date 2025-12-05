@@ -3,16 +3,16 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPaths } from '../utils/paths';
-import { getChange, listSpecs, parseSpec, parseTaskStats } from '../utils/parser';
+import { getChange, listSpecs, parseSpec, parseTaskStats, resolveChangeId, promptChangeSelection, listChanges } from '../utils/parser';
 
 export function showCommand(program: Command) {
   program
     .command('show [item]')
-    .description('Display change or spec details')
+    .description('Display change or spec details (supports numeric index)')
     .option('--type <type>', 'Specify type: change or spec')
     .option('--json', 'Output as JSON')
     .option('--deltas-only', 'Show only spec deltas for a change')
-    .action((item, options) => {
+    .action(async (item, options) => {
       const paths = getPaths();
       
       if (!paths) {
@@ -20,14 +20,43 @@ export function showCommand(program: Command) {
         process.exit(1);
       }
       
+      // If no item specified, try interactive selection for changes
       if (!item) {
-        console.error(chalk.red('Error: Please specify an item to show.'));
-        process.exit(1);
+        const changes = listChanges(paths.changes);
+        if (changes.length === 0) {
+          console.error(chalk.red('No active changes found.'));
+          process.exit(1);
+        }
+        if (changes.length === 1) {
+          console.log(chalk.dim(`Auto-selected: ${changes[0].id}`));
+          item = changes[0].id;
+        } else {
+          const selected = await promptChangeSelection(paths.changes);
+          if (!selected) {
+            process.exit(1);
+          }
+          item = selected.id;
+        }
+        options.type = 'change';
       }
       
       // Try to determine type
       let type = options.type;
       if (!type) {
+        // First check if it's a numeric index for changes
+        const index = parseInt(item, 10);
+        if (!isNaN(index)) {
+          const change = resolveChangeId(paths.changes, item);
+          if (change) {
+            showChangeAction(paths.changes, change.id, options);
+            return;
+          } else {
+            const changes = listChanges(paths.changes);
+            console.error(chalk.red(`Invalid index: ${index}. Available: 1-${changes.length}`));
+            process.exit(1);
+          }
+        }
+        
         // Check if it's a change
         const changePath = path.join(paths.changes, item);
         const specPath = path.join(paths.specs, item);

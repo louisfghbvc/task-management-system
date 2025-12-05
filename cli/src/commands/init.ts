@@ -379,12 +379,13 @@ Use \`.ai/AGENTS.md\` to learn:
 ## Quick Reference
 
 \`\`\`bash
-# CLI commands
-task-magic list                  # List active changes
+# CLI commands (supports numeric indexes!)
+task-magic list                  # List changes with [1], [2]... indexes
 task-magic list --specs          # List specifications  
-task-magic show <item>           # Display details
-task-magic validate <change>     # Validate change
-task-magic archive <id> --yes    # Archive completed change
+task-magic show 1                # Show change by index
+task-magic show <change-id>      # Show change by name
+task-magic validate 1            # Validate by index
+task-magic archive 1 --yes       # Archive by index
 task-magic sync                  # Update CHANGES.md
 \`\`\`
 
@@ -441,12 +442,16 @@ description: Implement an approved change and keep tasks in sync.
 
 **Steps**
 Track these steps as TODOs and complete them one by one.
-1. Read \`.ai/changes/<id>/proposal.md\`, \`design.md\` (if present), and \`tasks.md\` to confirm scope.
-2. Work through tasks sequentially, keeping edits minimal and focused.
-3. Confirm completion before updating statuses—make sure every item in \`tasks.md\` is finished.
-4. Update the checklist after all work is done so each task is marked \`- [x]\`.
-5. Reference \`task-magic list\` or \`task-magic show <item>\` when additional context is required.
+1. Run \`task-magic list\` to see active changes with numeric indexes.
+2. Use \`task-magic show 1\` (or the appropriate index/change-id) to read proposal.md, design.md, and tasks.md.
+3. Work through tasks sequentially, keeping edits minimal and focused.
+4. Confirm completion before updating statuses—make sure every item in \`tasks.md\` is finished.
+5. Update the checklist after all work is done so each task is marked \`- [x]\`.
 6. Run \`task-magic sync\` to update CHANGES.md with current progress.
+
+**Tip**: You can use numeric indexes instead of full change-ids:
+- \`task-magic show 1\` instead of \`task-magic show my-long-change-id\`
+- \`task-magic validate 1\` instead of \`task-magic validate my-long-change-id\`
 
 **Reference**
 - Use \`task-magic show <id> --json --deltas-only\` for additional context while implementing.
@@ -464,16 +469,19 @@ description: Archive a deployed change and update specs.
 - Refer to \`.ai/AGENTS.md\` for conventions and clarifications.
 
 **Steps**
-1. Determine the change ID to archive:
-   - If this prompt includes a specific change ID, use that value.
-   - Otherwise, run \`task-magic list\` to see active changes and confirm with user.
-2. Validate the change ID by running \`task-magic list\` and stop if missing or not ready.
-3. Run \`task-magic archive <id> --yes\` to move the change and apply spec updates.
+1. Run \`task-magic list\` to see active changes with numeric indexes.
+2. Determine which change to archive:
+   - If this prompt includes a specific change ID or index, use that value.
+   - Otherwise, confirm with user which change to archive.
+3. Run \`task-magic archive 1 --yes\` (using index) or \`task-magic archive <change-id> --yes\`.
 4. Review the command output to confirm specs were updated and change archived.
 5. Validate with \`task-magic validate --strict\` if anything looks off.
 
+**Tip**: You can use numeric indexes:
+- \`task-magic archive 1 --yes\` instead of \`task-magic archive my-long-change-id --yes\`
+
 **Reference**
-- Use \`task-magic list\` to confirm change IDs before archiving.
+- Use \`task-magic list\` to see changes with indexes.
 - Inspect refreshed specs with \`task-magic list --specs\`.
 `;
 

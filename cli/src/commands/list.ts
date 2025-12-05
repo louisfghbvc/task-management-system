@@ -30,7 +30,9 @@ function listChangesAction(changesDir: string, options: { json?: boolean; long?:
   const changes = listChanges(changesDir);
   
   if (options.json) {
-    console.log(JSON.stringify(changes, null, 2));
+    // Include index in JSON output
+    const changesWithIndex = changes.map((change, i) => ({ index: i + 1, ...change }));
+    console.log(JSON.stringify(changesWithIndex, null, 2));
     return;
   }
   
@@ -40,23 +42,28 @@ function listChangesAction(changesDir: string, options: { json?: boolean; long?:
   }
   
   console.log(chalk.bold('Changes:'));
-  for (const change of changes) {
+  changes.forEach((change, i) => {
+    const index = chalk.dim(`[${i + 1}]`);
     const taskProgress = `${change.tasksComplete}/${change.tasksTotal} tasks`;
     const title = change.title || '(no title)';
     
     if (options.long) {
-      console.log(`  ${chalk.cyan(change.id)}`);
-      console.log(`    Title: ${title}`);
-      console.log(`    Tasks: ${taskProgress}`);
-      console.log(`    Files: ${[
+      console.log(`  ${index} ${chalk.cyan(change.id)}`);
+      console.log(`      Title: ${title}`);
+      console.log(`      Tasks: ${taskProgress}`);
+      console.log(`      Files: ${[
         change.hasProposal ? 'proposal.md' : null,
         change.hasTasks ? 'tasks.md' : null,
         change.hasDesign ? 'design.md' : null,
         change.hasSpecs ? 'specs/' : null,
       ].filter(Boolean).join(', ')}`);
     } else {
-      console.log(`  ${chalk.cyan(change.id.padEnd(30))} ${taskProgress}`);
+      console.log(`  ${index} ${chalk.cyan(change.id.padEnd(30))} ${taskProgress}`);
     }
+  });
+  
+  if (changes.length > 0) {
+    console.log(chalk.dim(`\nTip: Use index to select, e.g., task-magic show 1`));
   }
 }
 

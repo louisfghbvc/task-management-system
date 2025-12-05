@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPaths } from '../utils/paths';
-import { getChange, parseSpec } from '../utils/parser';
+import { getChange, parseSpec, resolveChangeId, promptChangeSelection, listChanges } from '../utils/parser';
 
 interface ValidationError {
   type: 'error' | 'warning';
@@ -14,10 +14,10 @@ interface ValidationError {
 export function validateCommand(program: Command) {
   program
     .command('validate [change]')
-    .description('Validate a change or all changes')
+    .description('Validate a change or all changes (supports numeric index)')
     .option('--strict', 'Enable strict validation')
     .option('--json', 'Output as JSON')
-    .action((changeId, options) => {
+    .action(async (changeId, options) => {
       const paths = getPaths();
       
       if (!paths) {
@@ -26,7 +26,20 @@ export function validateCommand(program: Command) {
       }
       
       if (changeId) {
-        validateSingleChange(paths.changes, changeId, options);
+        // Check if it's a numeric index
+        const change = resolveChangeId(paths.changes, changeId);
+        if (change) {
+          validateSingleChange(paths.changes, change.id, options);
+        } else {
+          const changes = listChanges(paths.changes);
+          const index = parseInt(changeId, 10);
+          if (!isNaN(index)) {
+            console.error(chalk.red(`Invalid index: ${index}. Available: 1-${changes.length}`));
+          } else {
+            console.error(chalk.red(`Error: Change '${changeId}' not found.`));
+          }
+          process.exit(1);
+        }
       } else {
         validateAllChanges(paths.changes, options);
       }

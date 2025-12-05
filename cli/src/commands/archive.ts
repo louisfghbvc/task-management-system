@@ -3,12 +3,12 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPaths } from '../utils/paths';
-import { getChange, parseTaskStats } from '../utils/parser';
+import { getChange, parseTaskStats, resolveChangeId, listChanges } from '../utils/parser';
 
 export function archiveCommand(program: Command) {
   program
     .command('archive <change-id>')
-    .description('Archive a completed change')
+    .description('Archive a completed change (supports numeric index)')
     .option('--yes', 'Skip confirmation prompt')
     .option('-y', 'Skip confirmation prompt')
     .option('--skip-specs', 'Archive without applying spec updates')
@@ -20,7 +20,20 @@ export function archiveCommand(program: Command) {
         process.exit(1);
       }
       
-      archiveChange(paths, changeId, options);
+      // Resolve numeric index to change-id
+      const change = resolveChangeId(paths.changes, changeId);
+      if (!change) {
+        const changes = listChanges(paths.changes);
+        const index = parseInt(changeId, 10);
+        if (!isNaN(index)) {
+          console.error(chalk.red(`Invalid index: ${index}. Available: 1-${changes.length}`));
+        } else {
+          console.error(chalk.red(`Error: Change '${changeId}' not found.`));
+        }
+        process.exit(1);
+      }
+      
+      archiveChange(paths, change.id, options);
     });
 }
 

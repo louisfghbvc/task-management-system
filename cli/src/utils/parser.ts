@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
 
 export interface Change {
   id: string;
@@ -259,5 +260,88 @@ export function parseTasksWithDetails(filePath: string): TaskItem[] {
   }
   
   return tasks;
+}
+
+/**
+ * Resolve a change identifier (numeric index or change-id string) to a Change object
+ * @param changesDir - Path to the changes directory
+ * @param identifier - Either a numeric index (1-based) or a change-id string
+ * @returns The resolved Change or null if not found
+ */
+export function resolveChangeId(changesDir: string, identifier: string): Change | null {
+  const changes = listChanges(changesDir);
+  
+  // Check if identifier is a number
+  const index = parseInt(identifier, 10);
+  if (!isNaN(index) && index > 0 && index <= changes.length) {
+    return changes[index - 1];
+  }
+  
+  // Otherwise, treat as change-id string
+  return getChange(changesDir, identifier);
+}
+
+/**
+ * Get the list of changes with their numeric indexes
+ * @returns Array of [index, change] tuples (1-based index)
+ */
+export function getChangesWithIndex(changesDir: string): Array<{ index: number; change: Change }> {
+  const changes = listChanges(changesDir);
+  return changes.map((change, i) => ({ index: i + 1, change }));
+}
+
+/**
+ * Prompt user to select a change interactively
+ * @param changesDir - Path to the changes directory
+ * @returns Promise resolving to selected Change or null if cancelled/no changes
+ */
+export async function promptChangeSelection(changesDir: string): Promise<Change | null> {
+  const changes = listChanges(changesDir);
+  
+  if (changes.length === 0) {
+    return null;
+  }
+  
+  if (changes.length === 1) {
+    // Auto-select if only one change
+    return changes[0];
+  }
+  
+  // Display options
+  console.log('\nSelect a change:');
+  changes.forEach((change, i) => {
+    const progress = `${change.tasksComplete}/${change.tasksTotal} tasks`;
+    console.log(`  ${i + 1}. ${change.id} (${progress})`);
+  });
+  
+  // Prompt for selection
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  
+  return new Promise((resolve) => {
+    rl.question('\nEnter number: ', (answer) => {
+      rl.close();
+      const index = parseInt(answer.trim(), 10);
+      if (!isNaN(index) && index > 0 && index <= changes.length) {
+        resolve(changes[index - 1]);
+      } else {
+        console.log('Invalid selection.');
+        resolve(null);
+      }
+    });
+  });
+}
+
+/**
+ * Validate that an index is within the valid range for changes
+ */
+export function validateChangeIndex(changesDir: string, index: number): { valid: boolean; max: number } {
+  const changes = listChanges(changesDir);
+  return {
+    valid: index > 0 && index <= changes.length,
+    max: changes.length,
+  };
 }
 
