@@ -1,1 +1,35 @@
-.specstory/*
+# Dependencies
+node_modules/
+cli/node_modules/
+
+# Build outputs
+cli/dist/
+*.js.map
+
+# Package manager
+package-lock.json
+cli/package-lock.json
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cursor / AI tools
+.specstory/
+
+# Optional: Uncomment if you don't want to track memory
+# .ai/memory/
+
+# Optional: Uncomment if you don't want to track task detail files
+# .ai/changes/*/tasks/

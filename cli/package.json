@@ -1,0 +1,29 @@
+{
+  "name": "task-magic",
+  "version": "1.0.0",
+  "description": "Spec-driven development CLI for AI coding assistants",
+  "main": "dist/index.js",
+  "bin": {
+    "task-magic": "./bin/task-magic.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["ai", "task", "spec", "development", "cli"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "chalk": "^4.1.2",
+    "glob": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
