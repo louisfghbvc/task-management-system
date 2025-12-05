@@ -417,22 +417,12 @@ description: Scaffold a new change proposal and validate strictly.
 
 **Steps**
 1. Review \`.ai/project.md\`, run \`task-magic list\` and \`task-magic list --specs\` to understand context.
-2. Choose a unique verb-led \`change-id\` and create \`.ai/changes/<id>/\` directory.
-3. Create \`proposal.md\` with YAML frontmatter (run \`date -u +"%Y-%m-%dT%H:%M:%SZ"\` for timestamp):
-   \`\`\`yaml
-   ---
-   created_at: "YYYY-MM-DDTHH:MM:SSZ"
-   started_at: null
-   completed_at: null
-   ---
-   # Change: Brief description
-   
-   ## Why
-   ...
-   \`\`\`
-4. Draft spec deltas in \`.ai/changes/<id>/specs/<capability>/spec.md\` using \`## ADDED|MODIFIED|REMOVED Requirements\`.
-5. Draft \`tasks.md\` as an ordered list of small, verifiable work items.
-6. Validate with \`task-magic validate <id> --strict\` and resolve every issue before sharing.
+2. Choose a unique verb-led \`change-id\` and scaffold \`proposal.md\`, \`tasks.md\`, and \`design.md\` (when needed) under \`.ai/changes/<id>/\`.
+3. Map the change into concrete requirements, breaking multi-scope efforts into distinct spec deltas.
+4. Capture architectural reasoning in \`design.md\` when the solution spans multiple systems.
+5. Draft spec deltas in \`.ai/changes/<id>/specs/<capability>/spec.md\` using \`## ADDED|MODIFIED|REMOVED Requirements\` with at least one \`#### Scenario:\` per requirement.
+6. Draft \`tasks.md\` as an ordered list of small, verifiable work items.
+7. Validate with \`task-magic validate <id> --strict\` and resolve every issue before sharing.
 
 **Reference**
 - Use \`task-magic show <id> --json --deltas-only\` to inspect details when validation fails.
@@ -454,11 +444,10 @@ description: Implement an approved change and keep tasks in sync.
 Track these steps as TODOs and complete them one by one.
 1. Run \`task-magic list\` to see active changes with numeric indexes.
 2. Use \`task-magic show 1\` (or the appropriate index/change-id) to read proposal.md, design.md, and tasks.md.
-3. (Optional) Update \`started_at\` in proposal.md frontmatter to current timestamp.
-4. Work through tasks sequentially, keeping edits minimal and focused.
-5. Confirm completion before updating statuses—make sure every item in \`tasks.md\` is finished.
-6. Update the checklist after all work is done so each task is marked \`- [x]\`.
-7. Run \`task-magic sync\` to update CHANGES.md with current progress.
+3. Work through tasks sequentially, keeping edits minimal and focused.
+4. Confirm completion before updating statuses—make sure every item in \`tasks.md\` is finished.
+5. Update the checklist after all work is done so each task is marked \`- [x]\`.
+6. Run \`task-magic sync\` to update CHANGES.md with current progress.
 
 **Tip**: You can use numeric indexes instead of full change-ids:
 - \`task-magic show 1\` instead of \`task-magic show my-long-change-id\`

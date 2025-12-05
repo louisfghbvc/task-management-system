@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPaths } from '../utils/paths';
-import { getChange, parseTaskStats, resolveChangeId, listChanges, updateProposalFrontmatter, getCurrentTimestamp } from '../utils/parser';
+import { getChange, parseTaskStats, resolveChangeId, listChanges } from '../utils/parser';
 
 export function archiveCommand(program: Command) {
   program
@@ -57,17 +57,6 @@ function archiveChange(paths: ReturnType<typeof getPaths>, changeId: string, opt
     console.log(chalk.yellow(`Archiving change '${changeId}' with ${stats.complete}/${stats.total} tasks complete.`));
     console.log(chalk.yellow('Use --yes to skip this confirmation.'));
     process.exit(0);
-  }
-  
-  // Update completed_at timestamp in proposal.md (if frontmatter exists)
-  const proposalPath = path.join(change.path, 'proposal.md');
-  if (fs.existsSync(proposalPath)) {
-    const updated = updateProposalFrontmatter(proposalPath, {
-      completed_at: getCurrentTimestamp(),
-    });
-    if (updated) {
-      console.log(chalk.green('✓ Updated completed_at timestamp'));
-    }
   }
   
   // Create archive directory with date prefix
