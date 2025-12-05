@@ -136,7 +136,6 @@ function validateChange(changePath: string, strict?: boolean): ValidationError[]
   }
   
   // Validate proposal has required sections
-  // Note: regex with /m flag handles YAML frontmatter (matches # Change: anywhere in file)
   if (fs.existsSync(proposalPath)) {
     const content = fs.readFileSync(proposalPath, 'utf-8');
     

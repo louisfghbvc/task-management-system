@@ -2,13 +2,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 
-export interface ProposalFrontmatter {
-  created_at?: string;
-  started_at?: string | null;
-  completed_at?: string | null;
-  [key: string]: any;
-}
-
 export interface Change {
   id: string;
   path: string;
@@ -350,94 +343,5 @@ export function validateChangeIndex(changesDir: string, index: number): { valid:
     valid: index > 0 && index <= changes.length,
     max: changes.length,
   };
-}
-
-/**
- * Parse YAML frontmatter from a proposal.md file
- * @returns Object with frontmatter data and content, or null if no frontmatter
- */
-export function parseProposalFrontmatter(filePath: string): { frontmatter: ProposalFrontmatter; content: string } | null {
-  if (!fs.existsSync(filePath)) return null;
-  
-  const fileContent = fs.readFileSync(filePath, 'utf-8');
-  
-  // Check for frontmatter (starts with ---)
-  if (!fileContent.startsWith('---')) {
-    return null;
-  }
-  
-  // Find the closing ---
-  const endIndex = fileContent.indexOf('---', 3);
-  if (endIndex === -1) {
-    return null;
-  }
-  
-  const frontmatterStr = fileContent.substring(3, endIndex).trim();
-  const content = fileContent.substring(endIndex + 3).trim();
-  
-  // Parse simple YAML (key: value format)
-  const frontmatter: ProposalFrontmatter = {};
-  const lines = frontmatterStr.split('\n');
-  
-  for (const line of lines) {
-    const match = line.match(/^(\w+):\s*(.*)$/);
-    if (match) {
-      const [, key, value] = match;
-      // Handle null values
-      if (value === 'null' || value === '') {
-        frontmatter[key] = null;
-      } else if (value.startsWith('"') && value.endsWith('"')) {
-        // Quoted string
-        frontmatter[key] = value.slice(1, -1);
-      } else {
-        frontmatter[key] = value;
-      }
-    }
-  }
-  
-  return { frontmatter, content };
-}
-
-/**
- * Update YAML frontmatter in a proposal.md file
- * @param filePath - Path to proposal.md
- * @param updates - Object with fields to update
- */
-export function updateProposalFrontmatter(filePath: string, updates: Partial<ProposalFrontmatter>): boolean {
-  if (!fs.existsSync(filePath)) return false;
-  
-  const parsed = parseProposalFrontmatter(filePath);
-  
-  if (!parsed) {
-    // No frontmatter exists, can't update
-    return false;
-  }
-  
-  // Merge updates into existing frontmatter
-  const newFrontmatter = { ...parsed.frontmatter, ...updates };
-  
-  // Build new frontmatter string
-  const frontmatterLines: string[] = [];
-  for (const [key, value] of Object.entries(newFrontmatter)) {
-    if (value === null) {
-      frontmatterLines.push(`${key}: null`);
-    } else if (typeof value === 'string') {
-      frontmatterLines.push(`${key}: "${value}"`);
-    } else {
-      frontmatterLines.push(`${key}: ${value}`);
-    }
-  }
-  
-  const newContent = `---\n${frontmatterLines.join('\n')}\n---\n${parsed.content}`;
-  fs.writeFileSync(filePath, newContent);
-  
-  return true;
-}
-
-/**
- * Get current UTC timestamp in ISO format
- */
-export function getCurrentTimestamp(): string {
-  return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
