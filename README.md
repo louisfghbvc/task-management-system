@@ -32,6 +32,7 @@ cd cli && npm install && npm run build && npm link
 │       ├── proposal.md     # Why and what
 │       ├── tasks.md        # Implementation checklist
 │       ├── tasks/          # Detailed task files (optional)
+│       ├── dryrun.md       # Dry-run preview (optional)
 │       ├── design.md       # Technical decisions (optional)
 │       └── specs/          # Spec deltas
 └── memory/                 # Archive
@@ -78,7 +79,8 @@ task-magic archive <change-id> --yes
 task-magic list                  # List active changes
 task-magic list --specs          # List specifications
 task-magic show <item>           # Display details
-task-magic validate <change>     # Validate change
+task-magic validate <change>     # Validate change (checks detail links)
+task-magic validate <change> --strict  # + check detail/dryrun structure
 task-magic archive <id> --yes    # Archive completed change
 
 # Tasks
@@ -100,6 +102,7 @@ task-magic sync                  # Sync CHANGES.md
 | `/archive` | Archive a completed change |
 | `/quick-fix` | Create minimal change for simple fixes |
 | `/task-detail` | Add implementation details to a task |
+| `/task-dryrun` | Generate dry-run preview for a group of tasks |
 
 ## 📝 File Formats
 
@@ -139,6 +142,30 @@ What this task accomplishes.
 
 ## Test Strategy
 - [ ] Test case 1
+```
+
+### dryrun.md (Dry Run Preview)
+
+```markdown
+# Dry Run: Testing Case 5c
+
+## Context
+Purpose of this dry run - testing/implementation/deployment.
+
+## Prerequisites
+- `cd build && source setup.sh`
+- Required dependencies installed
+
+## Steps
+
+### 4.1: TC-1 Single Register
+- **Action**: Run `./run_test single_reg`
+- **Expected**: Uses broadcast (size=1 optimization)
+- **Verify**: Output contains "5c: single register"
+
+### 4.2: TC-2 Same Instruction
+- **Action**: Run `./run_test suffix_compat`
+- **Expected**: Both registers in same group
 ```
 
 ### proposal.md
