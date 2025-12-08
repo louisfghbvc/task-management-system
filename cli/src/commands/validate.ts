@@ -149,50 +149,66 @@ function validateTaskDetails(changePath: string, strict: boolean): ValidationErr
 }
 
 /**
- * Validate dryrun.md file structure (strict mode only)
+ * Validate section detail files in tasks/ directory (strict mode only)
+ * Section files follow pattern: tasks/section-<num>-<name>.md
  */
-function validateDryrunFile(changePath: string): ValidationError[] {
+function validateSectionDetailFiles(changePath: string): ValidationError[] {
   const errors: ValidationError[] = [];
-  const dryrunPath = path.join(changePath, 'dryrun.md');
+  const tasksDir = path.join(changePath, 'tasks');
   
-  if (!fs.existsSync(dryrunPath)) return errors;
+  if (!fs.existsSync(tasksDir)) return errors;
   
-  const content = fs.readFileSync(dryrunPath, 'utf-8');
+  const entries = fs.readdirSync(tasksDir);
+  const sectionFiles = entries.filter(f => f.startsWith('section-') && f.endsWith('.md'));
   
-  // Check for required sections
-  if (!content.match(/^#\s*Dry Run:/m)) {
-    errors.push({
-      type: 'warning',
-      message: 'dryrun.md missing "# Dry Run:" title',
-      file: 'dryrun.md',
-    });
-  }
-  
-  if (!content.match(/^##\s*Context/m)) {
-    errors.push({
-      type: 'warning',
-      message: 'dryrun.md missing section: ## Context',
-      file: 'dryrun.md',
-    });
-  }
-  
-  if (!content.match(/^##\s*Steps/m)) {
-    errors.push({
-      type: 'warning',
-      message: 'dryrun.md missing section: ## Steps',
-      file: 'dryrun.md',
-    });
-  } else {
-    // Check for at least one ### task entry under Steps
-    const stepsMatch = content.match(/^##\s*Steps[\s\S]*?(?=^##\s|$)/m);
-    if (stepsMatch) {
-      const stepsSection = stepsMatch[0];
-      if (!stepsSection.match(/^###\s+/m)) {
-        errors.push({
-          type: 'warning',
-          message: 'dryrun.md has no task steps defined (missing ### entries)',
-          file: 'dryrun.md',
-        });
+  for (const fileName of sectionFiles) {
+    const filePath = path.join(tasksDir, fileName);
+    const content = fs.readFileSync(filePath, 'utf-8');
+    const relativePath = `tasks/${fileName}`;
+    
+    // Check for required sections
+    if (!content.match(/^#\s*Detail:/m)) {
+      errors.push({
+        type: 'warning',
+        message: 'Section detail file missing "# Detail:" title',
+        file: relativePath,
+      });
+    }
+    
+    if (!content.match(/^##\s*Context/m)) {
+      errors.push({
+        type: 'warning',
+        message: 'Section detail file missing section: ## Context',
+        file: relativePath,
+      });
+    }
+    
+    if (!content.match(/^##\s*Prerequisites/m)) {
+      errors.push({
+        type: 'warning',
+        message: 'Section detail file missing section: ## Prerequisites',
+        file: relativePath,
+      });
+    }
+    
+    if (!content.match(/^##\s*Steps/m)) {
+      errors.push({
+        type: 'warning',
+        message: 'Section detail file missing section: ## Steps',
+        file: relativePath,
+      });
+    } else {
+      // Check for at least one ### task entry under Steps
+      const stepsMatch = content.match(/^##\s*Steps[\s\S]*?(?=^##\s|$)/m);
+      if (stepsMatch) {
+        const stepsSection = stepsMatch[0];
+        if (!stepsSection.match(/^###\s+/m)) {
+          errors.push({
+            type: 'warning',
+            message: 'Section detail file has no task steps defined (missing ### entries)',
+            file: relativePath,
+          });
+        }
       }
     }
   }
@@ -402,8 +418,8 @@ function validateChange(changePath: string, strict?: boolean): ValidationError[]
   
   // Validate dryrun.md (strict mode only)
   if (strict) {
-    const dryrunErrors = validateDryrunFile(changePath);
-    errors.push(...dryrunErrors);
+    const sectionDetailErrors = validateSectionDetailFiles(changePath);
+    errors.push(...sectionDetailErrors);
   }
   
   return errors;

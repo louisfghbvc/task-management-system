@@ -231,7 +231,6 @@ function generateCursorCommands(cursorCommandsDir: string, force: boolean): void
     { name: 'archive.md', template: ARCHIVE_COMMAND },
     { name: 'quick-fix.md', template: QUICK_FIX_COMMAND },
     { name: 'task-detail.md', template: TASK_DETAIL_COMMAND },
-    { name: 'task-dryrun.md', template: TASK_DRYRUN_COMMAND },
   ];
 
   for (const cmd of commands) {
@@ -777,8 +776,7 @@ task-magic sync                  # Update CHANGES.md
 - \`/execute\` - Implement an approved change
 - \`/archive\` - Archive a completed change
 - \`/quick-fix\` - Create a minimal change for simple fixes
-- \`/task-detail\` - Add implementation details to a task
-- \`/task-dryrun\` - Generate dry-run preview for a group of tasks
+- \`/task-detail\` - Add implementation details to a task or section
 `;
 
 // ============================================================================
@@ -916,119 +914,30 @@ const TASK_DETAIL_COMMAND = `---
 name: /task-detail
 id: task-detail
 category: Task Magic
-description: Create or view detailed implementation for a task.
+description: Create detailed implementation for a task or entire section.
 ---
 **Guardrails**
-- Use this to add implementation code, file paths, and test strategies to a task.
-- This creates a separate detail file in \`tasks/\` folder.
-- Refer to \`.ai/AGENTS.md\` for task detail format.
+- Use this to add implementation code, file paths, and test strategies.
+- Creates detail files in \`tasks/\` folder.
+- Supports two modes: **single task** or **entire section**.
 
 **Steps**
-1. Identify the task ID (e.g., \`1.1\`, \`2.3\`) from user request or context.
+1. Identify the input from user request:
+   - **Single task**: Task ID like \`1.1\`, \`2.3\`
+   - **Section**: Section number like \`4\` or section name like \`"Testing"\`
 2. If no change is specified and multiple changes exist, ask which change.
-3. Run \`task-magic task detail <task-id>\` to create the detail file template.
-4. Fill in the Implementation Details section with actual code:
-   - Add copy-paste ready code blocks with language tags
-   - List all files that need to be modified
-   - Include test strategy
-5. The task in \`tasks.md\` will automatically get a link to the detail file.
+3. Generate the appropriate detail file:
+   - Single task: \`tasks/<id>-<task-name>.md\`
+   - Section: \`tasks/section-<num>-<name>.md\`
 
-**Task Detail File Format**
-\`\`\`yaml
----
-id: "1.1"
-title: "Task Title"
-priority: high
-depends: ["1.0"]
-status: pending
-created_at: "2025-12-05T00:00:00Z"
----
+**Single Task Mode** - \`/task-detail 1.1\`
+Creates \`tasks/1.1-task-name.md\` with: Description, Implementation Details, Files to Modify, Test Strategy
 
-## Description
-What this task accomplishes.
-
-## Implementation Details
-\`\`\`typescript
-// Actual implementation code here
-\`\`\`
-
-## Files to Modify
-1. \`path/to/file.ts\` - Add function X
-2. \`path/to/other.ts\` - Update import
-
-## Test Strategy
-- [ ] Unit test for function X
-- [ ] Integration test for workflow
-\`\`\`
+**Section Mode** - \`/task-detail 4\`
+Creates \`tasks/section-4-testing.md\` with: Context, Prerequisites, Steps (### entries for each task)
 
 **Reference**
 - \`task-magic task show <id>\` - View task with details
-- \`task-magic task list\` - List all tasks in current change
+- Section files validated in \`--strict\` mode
 `;
 
-const TASK_DRYRUN_COMMAND = `---
-name: /task-dryrun
-id: task-dryrun
-category: Task Magic
-description: Generate a dry-run preview for a group of tasks without creating individual detail files.
----
-**Guardrails**
-- Use this when you want to preview how tasks will be executed without creating separate files.
-- Ideal for small, repetitive tasks (like test cases) or implementation previews.
-- Generates inline expansion in \`tasks.md\` OR a single \`dryrun.md\` file.
-- Refer to \`.ai/AGENTS.md\` for task format conventions.
-
-**Steps**
-1. Identify the change directory from user request or by running \`task-magic list\`.
-2. Read \`proposal.md\`, \`design.md\` (if exists), and \`tasks.md\` to understand context.
-3. Ask user which task group to dry-run (e.g., "Section 4" or "tasks 4.1-4.8") if not specified.
-4. Choose output mode based on task complexity:
-   - **Inline mode** (default): Expand tasks directly in \`tasks.md\` with indented details
-   - **File mode**: Create a single \`dryrun.md\` with structured format
-5. Generate dry-run content following the structured format below.
-
-**Inline Mode Format** (directly in tasks.md)
-\`\`\`markdown
-## 4. Testing [MEDIUM]
-- [ ] 4.1 TC-1: Single register (guaranteed broadcast)
-  - **Action**: Run \\\`./run_test single_reg\\\`
-  - **Expected**: Uses broadcast directly (size=1 optimization)
-  - **Verify**: Output shows "5c: single register"
-
-- [ ] 4.2 TC-2: Same instruction, suffix compatible
-  - **Action**: Run \\\`./run_test suffix_compat\\\`
-  - **Expected**: Both in same 5c group, saveCount > 0
-\`\`\`
-
-**File Mode Format** (creates dryrun.md in change folder)
-\`\`\`markdown
-# Dry Run: [Description]
-
-## Context
-[Purpose of this dry run - testing/implementation/deployment/other]
-
-## Prerequisites
-[Pre-conditions - environment, dependencies, setup commands]
-
-## Steps
-
-### [Task ID]: [Task Title]
-- **Action**: [What to do]
-- **Expected**: [What success looks like]
-- **Verify**: [How to confirm the result] (optional)
-\`\`\`
-
-**When to Use Each Mode**
-- **Inline mode**: Quick reference, few tasks, tasks won't change much
-- **File mode**: Complex setup, shared prerequisites, detailed steps, reusable reference
-
-**Required Sections for File Mode (validated in --strict)**
-- \`# Dry Run:\` - Title
-- \`## Context\` - Purpose description
-- \`## Steps\` - At least one \`###\` task step
-
-**Reference**
-- This is lighter than \`/task-detail\` which creates one file per task
-- Use when you have many small tasks that don't warrant individual files
-- Combine with \`design.md\` for implementation context
-`;

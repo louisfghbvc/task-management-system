@@ -31,8 +31,7 @@ cd cli && npm install && npm run build && npm link
 │   └── [change-name]/
 │       ├── proposal.md     # Why and what
 │       ├── tasks.md        # Implementation checklist
-│       ├── tasks/          # Detailed task files (optional)
-│       ├── dryrun.md       # Dry-run preview (optional)
+│       ├── tasks/          # Task & section detail files (optional)
 │       ├── design.md       # Technical decisions (optional)
 │       └── specs/          # Spec deltas
 └── memory/                 # Archive
@@ -56,9 +55,12 @@ cd cli && npm install && npm run build && npm link
 │        • proposal.md   - Why & what changes                     │
 │        • tasks.md      - Implementation checklist               │
 │        • specs/        - Specification deltas (if needed)       │
+│    → Run: task-magic validate <change-id> --strict              │
+│    → Fix any validation errors before presenting                │
 │                                                                 │
 │ 👤 User:                                                        │
 │    → Review generated proposal                                  │
+│    → Type /task-detail <id> for complex tasks or sections       │
 │    → Approve, request modifications, or reject                  │
 ├─────────────────────────────────────────────────────────────────┤
 │                    2. IMPLEMENT PHASE                           │
@@ -67,10 +69,9 @@ cd cli && npm install && npm run build && npm link
 │    → Type /execute command to start implementation              │
 │                                                                 │
 │ 🤖 AI:                                                          │
-│    → Read tasks.md and follow the checklist                     │
+│    → Read tasks.md and task detail files                        │
 │    → Implement each task one by one                             │
 │    → Update task status [x] when complete                       │
-│    → Generate task details/dryrun files if needed               │
 │                                                                 │
 │ 👤 User:                                                        │
 │    → Review code changes                                        │
@@ -128,7 +129,7 @@ task-magic list                  # List active changes
 task-magic list --specs          # List specifications
 task-magic show <item>           # Display details
 task-magic validate <change>     # Validate change (checks detail links)
-task-magic validate <change> --strict  # + check detail/dryrun structure
+task-magic validate <change> --strict  # + check detail/section structure
 task-magic archive <id> --yes    # Archive completed change
 
 # Tasks
@@ -149,8 +150,7 @@ task-magic sync                  # Sync CHANGES.md
 | `/execute` | Implement an approved change |
 | `/archive` | Archive a completed change |
 | `/quick-fix` | Create minimal change for simple fixes |
-| `/task-detail` | Add implementation details to a task |
-| `/task-dryrun` | Generate dry-run preview for a group of tasks |
+| `/task-detail` | Add implementation details to a task or section |
 
 ## 📝 File Formats
 
@@ -192,13 +192,15 @@ What this task accomplishes.
 - [ ] Test case 1
 ```
 
-### dryrun.md (Dry Run Preview)
+### Section Detail File (`/task-detail 4`)
+
+Creates `tasks/section-4-testing.md`:
 
 ```markdown
-# Dry Run: Testing Case 5c
+# Detail: Testing (Section 4)
 
 ## Context
-Purpose of this dry run - testing/implementation/deployment.
+Purpose of this section - testing/implementation/deployment.
 
 ## Prerequisites
 - `cd build && source setup.sh`
