@@ -24,16 +24,7 @@ description: Create detailed implementation for a task or entire section.
 **Single Task Mode** - `/task-detail 1.1`
 
 Creates `tasks/1.1-task-name.md`:
-```yaml
----
-id: "1.1"
-title: "Task Title"
-priority: high
-depends: ["1.0"]
-status: pending
-created_at: "2025-12-05T00:00:00Z"
----
-
+```markdown
 ## Description
 What this task accomplishes.
 
@@ -53,40 +44,38 @@ What this task accomplishes.
 
 **Section Mode** - `/task-detail 4` or `/task-detail "Testing"`
 
-Creates `tasks/section-4-testing.md`:
+Creates `tasks/section-4-<name>.md`:
 ```markdown
-# Detail: Testing (Section 4)
-
 ## Context
-[Purpose - what this section accomplishes, testing/implementation/deployment]
+[Purpose - what this section accomplishes]
 
 ## Prerequisites
-[Setup steps, environment, dependencies needed]
+[Dependencies, setup requirements]
 
-## Steps
+## Files to Modify
+1. `path/to/file.cpp` - Description of changes
 
-### 4.1: TC-1 Single Register
-- **Action**: Run `./run_test single_reg`
-- **Expected**: Uses broadcast (size=1 optimization)
-- **Verify**: Output contains "5c: single register"
+## Implementation Details
+### 4.1 First task
+[Implementation details, code blocks]
 
-### 4.2: TC-2 Same Instruction
-- **Action**: Run `./run_test suffix_compat`
-- **Expected**: Both registers in same group
-- **Verify**: saveCount > 0
+### 4.2 Second task
+[Implementation details, code blocks]
+
+## Test Strategy
+[Optional - test cases and verification]
 ```
 
 **When to Use Each Mode**
-- **Single task**: Complex implementation requiring detailed code, file changes, and test strategy
-- **Section**: Group of related tasks (like test cases) that share context and prerequisites
+- **Single task**: One specific task with focused implementation
+- **Section**: Group of related tasks sharing context and prerequisites
 
-**Required Sections**
+**Required Sections (validated in --strict)**
 | Mode | Required Sections |
 |------|-------------------|
 | Single Task | Description, Implementation Details, Files to Modify |
-| Section | Context, Prerequisites, Steps (with ### entries) |
+| Section | Context, Prerequisites, Files to Modify, (Implementation Details OR Steps) |
 
 **Reference**
 - `task-magic task show <id>` - View task with details
 - `task-magic task list` - List all tasks in current change
-- Section files validated in `--strict` mode

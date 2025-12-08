@@ -163,18 +163,8 @@ function createTaskDetail(taskId: string, options: { change?: string }) {
     return;
   }
 
-  // Create template
-  const timestamp = new Date().toISOString();
-  const template = `---
-id: "${taskId}"
-title: "${task.title}"
-priority: ${task.priority || 'medium'}
-depends: [${task.depends ? task.depends.map(d => `"${d}"`).join(', ') : ''}]
-status: ${task.status}
-created_at: "${timestamp}"
----
-
-## Description
+  // Create template (no frontmatter)
+  const template = `## Description
 ${task.title}
 
 ## Implementation Details

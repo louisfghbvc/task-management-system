@@ -11,63 +11,24 @@ interface ValidationError {
   file?: string;
 }
 
-interface DetailFileFrontmatter {
-  id?: string;
-  title?: string;
-  status?: string;
-  priority?: string;
-  depends?: string[];
-  created_at?: string;
-}
-
 /**
  * Extract detail links from tasks.md content
- * Returns array of { taskId, linkPath, taskStatus }
+ * Returns array of { taskId, linkPath }
  */
-function extractDetailLinks(tasksContent: string): Array<{ taskId: string; linkPath: string; taskStatus: string }> {
-  const links: Array<{ taskId: string; linkPath: string; taskStatus: string }> = [];
+function extractDetailLinks(tasksContent: string): Array<{ taskId: string; linkPath: string }> {
+  const links: Array<{ taskId: string; linkPath: string }> = [];
   const lines = tasksContent.split('\n');
   
   for (const line of lines) {
     // Match: - [x] 1.1 Task title → [📝 details](tasks/1.1-foo.md)
     const match = line.match(/^\s*-\s*\[([ x-])\]\s*(\d+\.\d+)\s+.+?→\s*\[.*?\]\((.+?)\)/i);
     if (match) {
-      const [, statusChar, taskId, linkPath] = match;
-      let taskStatus = 'pending';
-      if (statusChar.toLowerCase() === 'x') {
-        taskStatus = 'done';
-      } else if (statusChar === '-') {
-        taskStatus = 'in_progress';
-      }
-      links.push({ taskId, linkPath, taskStatus });
+      const [, , taskId, linkPath] = match;
+      links.push({ taskId, linkPath });
     }
   }
   
   return links;
-}
-
-/**
- * Parse YAML frontmatter from a detail file
- */
-function parseDetailFrontmatter(content: string): DetailFileFrontmatter | null {
-  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
-  if (!frontmatterMatch) return null;
-  
-  const frontmatter: DetailFileFrontmatter = {};
-  const lines = frontmatterMatch[1].split('\n');
-  
-  for (const line of lines) {
-    const match = line.match(/^(\w+):\s*"?([^"]*)"?\s*$/);
-    if (match) {
-      const [, key, value] = match;
-      if (key === 'id') frontmatter.id = value;
-      if (key === 'title') frontmatter.title = value;
-      if (key === 'status') frontmatter.status = value;
-      if (key === 'priority') frontmatter.priority = value;
-    }
-  }
-  
-  return frontmatter;
 }
 
 /**
@@ -83,7 +44,7 @@ function validateTaskDetails(changePath: string, strict: boolean): ValidationErr
   const tasksContent = fs.readFileSync(tasksPath, 'utf-8');
   const detailLinks = extractDetailLinks(tasksContent);
   
-  for (const { taskId, linkPath, taskStatus } of detailLinks) {
+  for (const { taskId, linkPath } of detailLinks) {
     const detailPath = path.join(changePath, linkPath);
     
     // Default mode: Check if linked file exists
@@ -96,19 +57,9 @@ function validateTaskDetails(changePath: string, strict: boolean): ValidationErr
       continue;
     }
     
-    // Strict mode: Validate detail file structure
+    // Strict mode: Validate detail file structure (no frontmatter required)
     if (strict) {
       const content = fs.readFileSync(detailPath, 'utf-8');
-      
-      // Check frontmatter exists
-      const frontmatter = parseDetailFrontmatter(content);
-      if (!frontmatter) {
-        errors.push({
-          type: 'warning',
-          message: `Detail file missing YAML frontmatter`,
-          file: linkPath,
-        });
-      }
       
       // Check required sections
       const requiredSections = ['## Description', '## Implementation Details', '## Files to Modify'];
@@ -117,27 +68,6 @@ function validateTaskDetails(changePath: string, strict: boolean): ValidationErr
           errors.push({
             type: 'warning',
             message: `Detail file missing section: ${section}`,
-            file: linkPath,
-          });
-        }
-      }
-      
-      // Check status consistency
-      if (frontmatter && frontmatter.status) {
-        const detailStatus = frontmatter.status.toLowerCase();
-        const tasksStatus = taskStatus.toLowerCase();
-        
-        // Map statuses for comparison
-        const normalizeStatus = (s: string) => {
-          if (s === 'done' || s === 'completed') return 'done';
-          if (s === 'in_progress') return 'in_progress';
-          return 'pending';
-        };
-        
-        if (normalizeStatus(detailStatus) !== normalizeStatus(tasksStatus)) {
-          errors.push({
-            type: 'warning',
-            message: `Status mismatch for task ${taskId}: tasks.md=${taskStatus}, detail=${frontmatter.status}`,
             file: linkPath,
           });
         }
@@ -166,15 +96,7 @@ function validateSectionDetailFiles(changePath: string): ValidationError[] {
     const content = fs.readFileSync(filePath, 'utf-8');
     const relativePath = `tasks/${fileName}`;
     
-    // Check for required sections
-    if (!content.match(/^#\s*Detail:/m)) {
-      errors.push({
-        type: 'warning',
-        message: 'Section detail file missing "# Detail:" title',
-        file: relativePath,
-      });
-    }
-    
+    // Required sections
     if (!content.match(/^##\s*Context/m)) {
       errors.push({
         type: 'warning',
@@ -191,25 +113,23 @@ function validateSectionDetailFiles(changePath: string): ValidationError[] {
       });
     }
     
-    if (!content.match(/^##\s*Steps/m)) {
+    if (!content.match(/^##\s*Files to Modify/m)) {
       errors.push({
         type: 'warning',
-        message: 'Section detail file missing section: ## Steps',
+        message: 'Section detail file missing section: ## Files to Modify',
         file: relativePath,
       });
-    } else {
-      // Check for at least one ### task entry under Steps
-      const stepsMatch = content.match(/^##\s*Steps[\s\S]*?(?=^##\s|$)/m);
-      if (stepsMatch) {
-        const stepsSection = stepsMatch[0];
-        if (!stepsSection.match(/^###\s+/m)) {
-          errors.push({
-            type: 'warning',
-            message: 'Section detail file has no task steps defined (missing ### entries)',
-            file: relativePath,
-          });
-        }
-      }
+    }
+    
+    // At least one of: Implementation Details or Steps
+    const hasImplementationDetails = content.match(/^##\s*Implementation Details/m);
+    const hasSteps = content.match(/^##\s*Steps/m);
+    if (!hasImplementationDetails && !hasSteps) {
+      errors.push({
+        type: 'warning',
+        message: 'Section detail file missing content section: ## Implementation Details or ## Steps',
+        file: relativePath,
+      });
     }
   }
   

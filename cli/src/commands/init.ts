@@ -598,15 +598,6 @@ Priority levels: \`[CRITICAL]\`, \`[HIGH]\`, \`[MEDIUM]\`, \`[LOW]\`
 For complex tasks, create detailed implementation files in \`tasks/\`:
 
 \`\`\`markdown
----
-id: "1.1"
-title: "Create database schema"
-priority: high
-depends: []
-status: pending
-created_at: "2025-12-05T00:00:00Z"
----
-
 ## Description
 Create the user table with required fields.
 

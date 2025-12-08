@@ -168,15 +168,7 @@ task-magic sync                  # Sync CHANGES.md
 
 ### Task Detail File
 
-```yaml
----
-id: "1.1"
-title: "Create database"
-priority: high
-depends: []
-status: pending
----
-
+```markdown
 ## Description
 What this task accomplishes.
 
