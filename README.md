@@ -43,7 +43,55 @@ cd cli && npm install && npm run build && npm link
 ## 🔄 Workflow
 
 ```
-1. PROPOSE → 2. IMPLEMENT → 3. ARCHIVE
+┌─────────────────────────────────────────────────────────────────┐
+│                    1. PROPOSE PHASE                             │
+├─────────────────────────────────────────────────────────────────┤
+│ 👤 User:                                                        │
+│    → Type /proposal command with your idea/request              │
+│    → Example: "/proposal add user authentication feature"       │
+│                                                                 │
+│ 🤖 AI:                                                          │
+│    → Analyze user's request                                     │
+│    → Generate under .ai/changes/<change-id>/:                   │
+│        • proposal.md   - Why & what changes                     │
+│        • tasks.md      - Implementation checklist               │
+│        • specs/        - Specification deltas (if needed)       │
+│                                                                 │
+│ 👤 User:                                                        │
+│    → Review generated proposal                                  │
+│    → Approve, request modifications, or reject                  │
+├─────────────────────────────────────────────────────────────────┤
+│                    2. IMPLEMENT PHASE                           │
+├─────────────────────────────────────────────────────────────────┤
+│ 👤 User:                                                        │
+│    → Type /execute command to start implementation              │
+│                                                                 │
+│ 🤖 AI:                                                          │
+│    → Read tasks.md and follow the checklist                     │
+│    → Implement each task one by one                             │
+│    → Update task status [x] when complete                       │
+│    → Generate task details/dryrun files if needed               │
+│                                                                 │
+│ 👤 User:                                                        │
+│    → Review code changes                                        │
+│    → Test functionality                                         │
+│    → Provide feedback or approve                                │
+│                                                                 │
+│ 🤖 AI:                                                          │
+│    → Address feedback if any                                    │
+│    → Run: task-magic sync (update CHANGES.md)                   │
+├─────────────────────────────────────────────────────────────────┤
+│                    3. ARCHIVE PHASE                             │
+├─────────────────────────────────────────────────────────────────┤
+│ 👤 User:                                                        │
+│    → Confirm all tasks complete                                 │
+│    → Type /archive command                                      │
+│                                                                 │
+│ 🤖 AI:                                                          │
+│    → Run: task-magic archive <change-id> --yes                  │
+│    → Move change to .ai/memory/changes/                         │
+│    → Update CHANGES_LOG.md                                      │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 1. Create a Change Proposal
