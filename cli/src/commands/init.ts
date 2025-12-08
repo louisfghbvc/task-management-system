@@ -974,7 +974,7 @@ description: Generate a dry-run preview for a group of tasks without creating in
 ---
 **Guardrails**
 - Use this when you want to preview how tasks will be executed without creating separate files.
-- Ideal for small, repetitive tasks (like test cases) that don't need individual detail files.
+- Ideal for small, repetitive tasks (like test cases) or implementation previews.
 - Generates inline expansion in \`tasks.md\` OR a single \`dryrun.md\` file.
 - Refer to \`.ai/AGENTS.md\` for task format conventions.
 
@@ -984,61 +984,51 @@ description: Generate a dry-run preview for a group of tasks without creating in
 3. Ask user which task group to dry-run (e.g., "Section 4" or "tasks 4.1-4.8") if not specified.
 4. Choose output mode based on task complexity:
    - **Inline mode** (default): Expand tasks directly in \`tasks.md\` with indented details
-   - **File mode**: Create a single \`dryrun.md\` with all task previews
-5. Generate dry-run content with: Setup, Input, Command, Expected output, Verification steps.
+   - **File mode**: Create a single \`dryrun.md\` with structured format
+5. Generate dry-run content following the structured format below.
 
 **Inline Mode Format** (directly in tasks.md)
 \`\`\`markdown
 ## 4. Testing [MEDIUM]
 - [ ] 4.1 TC-1: Single register (guaranteed broadcast)
-  - **Setup**: \\\`cd build && source setup.sh\\\`
-  - **Input**: RegA: instr=0x12, data=0x5678
-  - **Command**: \\\`JET_DEBUG=1 ./run_test single_reg 2>&1 | grep "DEBUG:5c"\\\`
+  - **Action**: Run \\\`./run_test single_reg\\\`
   - **Expected**: Uses broadcast directly (size=1 optimization)
-  - **Verify**: Output shows "5c: single register, using broadcast"
+  - **Verify**: Output shows "5c: single register"
 
 - [ ] 4.2 TC-2: Same instruction, suffix compatible
-  - **Input**: RegA 32-bit=0x12345678, RegB 16-bit=0x5678
-  - **Command**: \\\`./run_test suffix_compat\\\`
+  - **Action**: Run \\\`./run_test suffix_compat\\\`
   - **Expected**: Both in same 5c group, saveCount > 0
-  - **Verify**: ShiftData shows clusterBroadcast=true
 \`\`\`
 
 **File Mode Format** (creates dryrun.md in change folder)
 \`\`\`markdown
-# Dry Run: [Change Name]
+# Dry Run: [Description]
 
-## Environment Setup
-\\\`\\\`\\\`bash
-cd /path/to/build
-source setup.sh
-export JET_DEBUG=1
-\\\`\\\`\\\`
+## Context
+[Purpose of this dry run - testing/implementation/deployment/other]
 
-## Task Group: Testing (4.x)
+## Prerequisites
+[Pre-conditions - environment, dependencies, setup commands]
 
-### 4.1 TC-1: Single Register
-| Step | Action |
-|------|--------|
-| 1 | Prepare input: RegA with instr=0x12, data=0x5678 |
-| 2 | Run: \\\`./run_test single_reg\\\` |
-| 3 | Verify: Output contains "5c: single register" |
-| 4 | Check: ShiftData.clusterBroadcast == true |
+## Steps
+
+### [Task ID]: [Task Title]
+- **Action**: [What to do]
+- **Expected**: [What success looks like]
+- **Verify**: [How to confirm the result] (optional)
 \`\`\`
 
 **When to Use Each Mode**
 - **Inline mode**: Quick reference, few tasks, tasks won't change much
-- **File mode**: Complex setup, shared environment, detailed verification steps
+- **File mode**: Complex setup, shared prerequisites, detailed steps, reusable reference
 
-**Inline Detail Fields**
-- **Setup**: One-time environment setup (optional, omit if obvious)
-- **Input**: Test data or preconditions
-- **Command**: Exact command to run
-- **Expected**: What success looks like
-- **Verify**: How to confirm the result
+**Required Sections for File Mode (validated in --strict)**
+- \`# Dry Run:\` - Title
+- \`## Context\` - Purpose description
+- \`## Steps\` - At least one \`###\` task step
 
 **Reference**
 - This is lighter than \`/task-detail\` which creates one file per task
-- Use when you have many small tasks (like test cases) that don't warrant individual files
+- Use when you have many small tasks that don't warrant individual files
 - Combine with \`design.md\` for implementation context
 `;

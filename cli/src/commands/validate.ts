@@ -3,12 +3,201 @@ import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getPaths } from '../utils/paths';
-import { getChange, parseSpec, resolveChangeId, promptChangeSelection, listChanges } from '../utils/parser';
+import { getChange, parseSpec, resolveChangeId, promptChangeSelection, listChanges, parseTasksWithDetails } from '../utils/parser';
 
 interface ValidationError {
   type: 'error' | 'warning';
   message: string;
   file?: string;
+}
+
+interface DetailFileFrontmatter {
+  id?: string;
+  title?: string;
+  status?: string;
+  priority?: string;
+  depends?: string[];
+  created_at?: string;
+}
+
+/**
+ * Extract detail links from tasks.md content
+ * Returns array of { taskId, linkPath, taskStatus }
+ */
+function extractDetailLinks(tasksContent: string): Array<{ taskId: string; linkPath: string; taskStatus: string }> {
+  const links: Array<{ taskId: string; linkPath: string; taskStatus: string }> = [];
+  const lines = tasksContent.split('\n');
+  
+  for (const line of lines) {
+    // Match: - [x] 1.1 Task title → [📝 details](tasks/1.1-foo.md)
+    const match = line.match(/^\s*-\s*\[([ x-])\]\s*(\d+\.\d+)\s+.+?→\s*\[.*?\]\((.+?)\)/i);
+    if (match) {
+      const [, statusChar, taskId, linkPath] = match;
+      let taskStatus = 'pending';
+      if (statusChar.toLowerCase() === 'x') {
+        taskStatus = 'done';
+      } else if (statusChar === '-') {
+        taskStatus = 'in_progress';
+      }
+      links.push({ taskId, linkPath, taskStatus });
+    }
+  }
+  
+  return links;
+}
+
+/**
+ * Parse YAML frontmatter from a detail file
+ */
+function parseDetailFrontmatter(content: string): DetailFileFrontmatter | null {
+  const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  if (!frontmatterMatch) return null;
+  
+  const frontmatter: DetailFileFrontmatter = {};
+  const lines = frontmatterMatch[1].split('\n');
+  
+  for (const line of lines) {
+    const match = line.match(/^(\w+):\s*"?([^"]*)"?\s*$/);
+    if (match) {
+      const [, key, value] = match;
+      if (key === 'id') frontmatter.id = value;
+      if (key === 'title') frontmatter.title = value;
+      if (key === 'status') frontmatter.status = value;
+      if (key === 'priority') frontmatter.priority = value;
+    }
+  }
+  
+  return frontmatter;
+}
+
+/**
+ * Validate task detail files in the tasks/ directory
+ */
+function validateTaskDetails(changePath: string, strict: boolean): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const tasksPath = path.join(changePath, 'tasks.md');
+  const tasksDir = path.join(changePath, 'tasks');
+  
+  if (!fs.existsSync(tasksPath)) return errors;
+  
+  const tasksContent = fs.readFileSync(tasksPath, 'utf-8');
+  const detailLinks = extractDetailLinks(tasksContent);
+  
+  for (const { taskId, linkPath, taskStatus } of detailLinks) {
+    const detailPath = path.join(changePath, linkPath);
+    
+    // Default mode: Check if linked file exists
+    if (!fs.existsSync(detailPath)) {
+      errors.push({
+        type: 'warning',
+        message: `Broken detail link: ${linkPath}`,
+        file: 'tasks.md',
+      });
+      continue;
+    }
+    
+    // Strict mode: Validate detail file structure
+    if (strict) {
+      const content = fs.readFileSync(detailPath, 'utf-8');
+      
+      // Check frontmatter exists
+      const frontmatter = parseDetailFrontmatter(content);
+      if (!frontmatter) {
+        errors.push({
+          type: 'warning',
+          message: `Detail file missing YAML frontmatter`,
+          file: linkPath,
+        });
+      }
+      
+      // Check required sections
+      const requiredSections = ['## Description', '## Implementation Details', '## Files to Modify'];
+      for (const section of requiredSections) {
+        if (!content.includes(section)) {
+          errors.push({
+            type: 'warning',
+            message: `Detail file missing section: ${section}`,
+            file: linkPath,
+          });
+        }
+      }
+      
+      // Check status consistency
+      if (frontmatter && frontmatter.status) {
+        const detailStatus = frontmatter.status.toLowerCase();
+        const tasksStatus = taskStatus.toLowerCase();
+        
+        // Map statuses for comparison
+        const normalizeStatus = (s: string) => {
+          if (s === 'done' || s === 'completed') return 'done';
+          if (s === 'in_progress') return 'in_progress';
+          return 'pending';
+        };
+        
+        if (normalizeStatus(detailStatus) !== normalizeStatus(tasksStatus)) {
+          errors.push({
+            type: 'warning',
+            message: `Status mismatch for task ${taskId}: tasks.md=${taskStatus}, detail=${frontmatter.status}`,
+            file: linkPath,
+          });
+        }
+      }
+    }
+  }
+  
+  return errors;
+}
+
+/**
+ * Validate dryrun.md file structure (strict mode only)
+ */
+function validateDryrunFile(changePath: string): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const dryrunPath = path.join(changePath, 'dryrun.md');
+  
+  if (!fs.existsSync(dryrunPath)) return errors;
+  
+  const content = fs.readFileSync(dryrunPath, 'utf-8');
+  
+  // Check for required sections
+  if (!content.match(/^#\s*Dry Run:/m)) {
+    errors.push({
+      type: 'warning',
+      message: 'dryrun.md missing "# Dry Run:" title',
+      file: 'dryrun.md',
+    });
+  }
+  
+  if (!content.match(/^##\s*Context/m)) {
+    errors.push({
+      type: 'warning',
+      message: 'dryrun.md missing section: ## Context',
+      file: 'dryrun.md',
+    });
+  }
+  
+  if (!content.match(/^##\s*Steps/m)) {
+    errors.push({
+      type: 'warning',
+      message: 'dryrun.md missing section: ## Steps',
+      file: 'dryrun.md',
+    });
+  } else {
+    // Check for at least one ### task entry under Steps
+    const stepsMatch = content.match(/^##\s*Steps[\s\S]*?(?=^##\s|$)/m);
+    if (stepsMatch) {
+      const stepsSection = stepsMatch[0];
+      if (!stepsSection.match(/^###\s+/m)) {
+        errors.push({
+          type: 'warning',
+          message: 'dryrun.md has no task steps defined (missing ### entries)',
+          file: 'dryrun.md',
+        });
+      }
+    }
+  }
+  
+  return errors;
 }
 
 export function validateCommand(program: Command) {
@@ -205,6 +394,16 @@ function validateChange(changePath: string, strict?: boolean): ValidationError[]
     if (strict && !hasDeltas) {
       errors.push({ type: 'warning', message: 'No spec deltas found in specs/', file: 'specs/' });
     }
+  }
+  
+  // Validate task detail files (default: broken links, strict: structure + consistency)
+  const detailErrors = validateTaskDetails(changePath, strict || false);
+  errors.push(...detailErrors);
+  
+  // Validate dryrun.md (strict mode only)
+  if (strict) {
+    const dryrunErrors = validateDryrunFile(changePath);
+    errors.push(...dryrunErrors);
   }
   
   return errors;
